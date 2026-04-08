@@ -1,0 +1,325 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #000; }
+#page { background: #000; min-height: 100vh; padding-bottom: 2rem; }
+#site-title {
+  text-align: center;
+  font-family: 'Nunito', sans-serif;
+  font-size: 42px; font-weight: 700; color: #fff;
+  padding: 18px 0 14px; letter-spacing: 1px;
+}
+#editor-wrap {
+  display: flex; flex-direction: column;
+  background: #111; border: 0.5px solid #333;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden; margin: 0 8px;
+}
+#toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-bottom: 0.5px solid #333; background: #111;
+  flex-wrap: wrap;
+}
+#toolbar span { font-size: 12px; color: #888; font-family: var(--font-mono); flex: 1; }
+.tb-btn {
+  font-size: 12px; padding: 4px 10px; cursor: pointer;
+  border: 0.5px solid #444; border-radius: var(--border-radius-md);
+  background: #1a1a1a; color: #ccc; font-family: var(--font-mono); transition: background 0.1s;
+}
+.tb-btn:hover { background: #2a2a2a; }
+.tb-btn:active { transform: scale(0.97); }
+.tb-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+#file-wrap { position: relative; }
+#file-btn {
+  font-size: 12px; padding: 4px 10px; cursor: pointer;
+  border: 0.5px solid #444;
+  border-radius: var(--border-radius-md);
+  background: #1a1a1a; color: #ccc; font-family: var(--font-mono);
+  transition: background 0.1s;
+  display: block;
+}
+#file-btn:hover { background: #2a2a2a; }
+#file-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #1a1a1a;
+  border: 0.5px solid #444;
+  border-top: none;
+  border-radius: 0 0 var(--border-radius-md) var(--border-radius-md);
+  overflow: hidden;
+  z-index: 99;
+  min-width: 100%;
+}
+#file-wrap:hover #file-btn {
+  background: #2a2a2a;
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+  border-bottom-color: #1a1a1a;
+}
+#file-wrap:hover #file-menu { display: block; }
+.file-item {
+  display: block; width: 100%;
+  padding: 7px 14px;
+  font-size: 12px; font-family: var(--font-mono);
+  color: #ccc; background: none; border: none;
+  cursor: pointer; text-align: left;
+  white-space: nowrap;
+}
+.file-item:hover { background: #2a2a2a; color: #fff; }
+
+#panes { display: flex; flex-direction: row; min-height: 500px; }
+#code-side {
+  display: flex; flex-direction: row; flex: 0 0 55%;
+  border-right: 0.5px solid #333; min-width: 0;
+}
+.editor-block {
+  display: flex; flex-direction: column; flex: 1;
+  border-right: 0.5px solid #333; min-width: 0;
+}
+.editor-block:last-child { border-right: none; }
+.editor-label {
+  font-size: 11px; padding: 4px 12px; color: #666;
+  border-bottom: 0.5px solid #333; letter-spacing: 0.06em;
+  text-transform: uppercase; background: #0a0a0a; font-family: var(--font-mono);
+}
+.code-editor {
+  flex: 1; resize: none; outline: none; border: none;
+  padding: 10px 14px; font-family: var(--font-mono); font-size: 12px;
+  line-height: 1.6; background: #111; color: #ccc; tab-size: 2;
+  min-height: 460px; width: 100%;
+}
+.code-editor::placeholder { color: #444; }
+#preview-side { flex: 0 0 45%; display: flex; flex-direction: column; min-width: 0; }
+#preview-label {
+  font-size: 11px; padding: 4px 12px; color: #666;
+  border-bottom: 0.5px solid #333; letter-spacing: 0.06em;
+  text-transform: uppercase; background: #0a0a0a; font-family: var(--font-mono);
+}
+#preview-frame { flex: 1; border: none; width: 100%; background: white; min-height: 460px; }
+#status-bar {
+  padding: 4px 12px; font-size: 11px; color: #555;
+  border-top: 0.5px solid #333; background: #111;
+  font-family: var(--font-mono); display: flex; justify-content: space-between;
+}
+@media (max-width: 600px) {
+  #panes { flex-direction: column; }
+  #code-side { flex-direction: column; flex: none; border-right: none; border-bottom: 0.5px solid #333; }
+  .editor-block { border-right: none; border-bottom: 0.5px solid #333; }
+  .editor-block:last-child { border-bottom: none; }
+  .code-editor { min-height: 120px; }
+  #preview-side { flex: none; }
+  #preview-frame { min-height: 300px; }
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700&display=swap" rel="stylesheet">
+
+<div id="page">
+  <div id="site-title">Feonixx</div>
+  <div id="editor-wrap">
+    <div id="toolbar">
+      <span>html editor — live preview</span>
+      <button class="tb-btn" onclick="runCode()">run</button>
+      <button class="tb-btn" onclick="resetCode()">reset</button>
+      <button class="tb-btn" onclick="clearCode()">clear</button>
+      <button class="tb-btn" onclick="copyCode()">copy</button>
+      <div id="file-wrap">
+        <button id="file-btn">file ▾</button>
+        <div id="file-menu">
+          <button class="file-item" onclick="downloadCode()">download</button>
+          <button class="file-item" onclick="openCode()">open</button>
+        </div>
+      </div>
+      <button class="tb-btn" id="undo-btn" onclick="doUndo()">undo</button>
+      <button class="tb-btn" id="redo-btn" onclick="doRedo()">redo</button>
+    </div>
+    <div id="panes">
+      <div id="code-side">
+        <div class="editor-block">
+          <div class="editor-label">html</div>
+          <textarea id="editor-html" class="code-editor" spellcheck="false" placeholder="<!-- body content only -->"></textarea>
+        </div>
+        <div class="editor-block">
+          <div class="editor-label">css</div>
+          <textarea id="editor-css" class="code-editor" spellcheck="false" placeholder="/* styles */"></textarea>
+        </div>
+        <div class="editor-block">
+          <div class="editor-label">js</div>
+          <textarea id="editor-js" class="code-editor" spellcheck="false" placeholder="// javascript"></textarea>
+        </div>
+      </div>
+      <div id="preview-side">
+        <div id="preview-label">preview</div>
+        <iframe id="preview-frame"
+          sandbox="allow-scripts allow-popups allow-top-navigation allow-same-origin"
+          allow="camera; microphone; display-capture"
+        ></iframe>
+      </div>
+    </div>
+    <div id="status-bar">
+      <span id="line-info">ln 1, col 1</span>
+      <span id="run-status">ready</span>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".html" style="display:none">
+
+<script>
+const frame = document.getElementById('preview-frame');
+const lineInfo = document.getElementById('line-info');
+const runStatus = document.getElementById('run-status');
+const undoBtn = document.getElementById('undo-btn');
+const redoBtn = document.getElementById('redo-btn');
+const fileInput = document.getElementById('file-input');
+const editors = {
+  html: document.getElementById('editor-html'),
+  css: document.getElementById('editor-css'),
+  js: document.getElementById('editor-js')
+};
+
+const ORIGINAL = {
+  html: `<h1>Hello, world!</h1>`,
+  css: `body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background: #f5f5f5;
+}
+h1 { color: #333; }`,
+  js: `console.log('Hello!');`
+};
+
+const history = { html: [], css: [], js: [] };
+const future = { html: [], css: [], js: [] };
+let activeTab = 'html';
+
+function updateUndoRedo() {
+  undoBtn.disabled = history[activeTab].length === 0;
+  redoBtn.disabled = future[activeTab].length === 0;
+}
+
+function pushHistory(tab) {
+  history[tab].push(editors[tab].value);
+  if (history[tab].length > 100) history[tab].shift();
+  future[tab] = [];
+  updateUndoRedo();
+}
+
+function doUndo() {
+  if (!history[activeTab].length) return;
+  future[activeTab].push(editors[activeTab].value);
+  editors[activeTab].value = history[activeTab].pop();
+  runCode(); updateUndoRedo();
+  runStatus.textContent = 'undone';
+}
+
+function doRedo() {
+  if (!future[activeTab].length) return;
+  history[activeTab].push(editors[activeTab].value);
+  editors[activeTab].value = future[activeTab].pop();
+  runCode(); updateUndoRedo();
+  runStatus.textContent = 'redone';
+}
+
+function runCode() {
+  const combined = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${editors.css.value}</style></head><body>${editors.html.value}<script>${editors.js.value}<\/script></body></html>`;
+  const blob = new Blob([combined], {type: 'text/html'});
+  frame.src = URL.createObjectURL(blob);
+  runStatus.textContent = 'updated ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function resetCode() {
+  Object.keys(editors).forEach(k => { history[k] = []; future[k] = []; });
+  editors.html.value = ORIGINAL.html;
+  editors.css.value = ORIGINAL.css;
+  editors.js.value = ORIGINAL.js;
+  runCode(); updateUndoRedo();
+  runStatus.textContent = 'reset!';
+}
+
+function clearCode() {
+  pushHistory(activeTab);
+  editors[activeTab].value = '';
+  runCode();
+  runStatus.textContent = 'cleared';
+}
+
+function copyCode() {
+  const all = `<!-- HTML -->\n${editors.html.value}\n\n/* CSS */\n${editors.css.value}\n\n// JS\n${editors.js.value}`;
+  navigator.clipboard.writeText(all).then(() => {
+    runStatus.textContent = 'copied!';
+    setTimeout(() => runStatus.textContent = 'ready', 1500);
+  });
+}
+
+function downloadCode() {
+  const combined = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<style>\n${editors.css.value}\n</style>\n</head>\n<body>\n${editors.html.value}\n<script>\n${editors.js.value}\n<\/script>\n</body>\n</html>`;
+  const blob = new Blob([combined], {type: 'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'index.html';
+  a.click();
+  runStatus.textContent = 'downloaded!';
+}
+
+function openCode() {
+  fileInput.click();
+}
+
+fileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const content = ev.target.result;
+    const styleMatch = content.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+    const bodyMatch = content.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    const scriptMatch = content.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
+    if (styleMatch) editors.css.value = styleMatch[1].trim();
+    if (bodyMatch) {
+      editors.html.value = bodyMatch[1].replace(/<script[\s\S]*?<\/script>/gi, '').trim();
+    }
+    if (scriptMatch) editors.js.value = scriptMatch[1].trim();
+    runCode();
+    runStatus.textContent = 'opened ' + file.name;
+  };
+  reader.readAsText(file);
+  fileInput.value = '';
+});
+
+Object.entries(editors).forEach(([key, ed]) => {
+  ed.addEventListener('focus', () => { activeTab = key; updateUndoRedo(); });
+  ed.addEventListener('input', () => {
+    clearTimeout(ed._d);
+    runStatus.textContent = 'editing…';
+    ed._d = setTimeout(() => { pushHistory(key); runCode(); }, 600);
+  });
+  ed.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = e.target.selectionStart;
+      e.target.value = e.target.value.substring(0, s) + '  ' + e.target.value.substring(e.target.selectionEnd);
+      e.target.selectionStart = e.target.selectionEnd = s + 2;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); doUndo(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); doRedo(); }
+    updateLineInfo(ed);
+  });
+  ed.addEventListener('click', () => { activeTab = key; updateLineInfo(ed); updateUndoRedo(); });
+  ed.addEventListener('keyup', () => updateLineInfo(ed));
+});
+
+function updateLineInfo(ed) {
+  const text = ed.value.substring(0, ed.selectionStart);
+  const lines = text.split('\n');
+  lineInfo.textContent = `ln ${lines.length}, col ${lines[lines.length-1].length + 1}`;
+}
+
+resetCode();
+</script>
